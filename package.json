@@ -1,0 +1,32 @@
+{
+  "name": "jobsheet",
+  "private": true,
+  "workspaces": [
+    "apps/mobile",
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:start": "supabase start -x vector,logflare,studio,imgproxy,mailpit,realtime,supavisor",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "functions:check": "deno check --config supabase/functions/deno.json supabase/functions/*/index.ts",
+    "functions:test": "deno test --config supabase/functions/deno.json --allow-env --allow-net --allow-read supabase/functions",
+    "core:sync": "node scripts/sync-core.mjs",
+    "core:check": "node scripts/sync-core.mjs --check"
+  },
+  "devDependencies": {
+    "deno": "2.9.6",
+    "supabase": "3.1.0"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "allowScripts": {
+    "deno@2.9.6": true,
+    "@sentry/cli@3.8.0": true,
+    "@sentry/cli@2.58.6": true
+  }
+}

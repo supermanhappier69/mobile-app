@@ -32,7 +32,17 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "expo-sqlite",
+      "expo-secure-store",
+      "@react-native-google-signin/google-signin",
+      "expo-audio",
+      "expo-speech-recognition",
+      "expo-localization",
+      "expo-sharing",
+      "expo-build-properties",
+      "@stripe/stripe-terminal-react-native",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,
