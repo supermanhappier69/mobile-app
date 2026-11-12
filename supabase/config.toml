@@ -3,7 +3,7 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "workspace"
+project_id = "jobsheet"
 
 [api]
 enabled = true
@@ -158,11 +158,11 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+site_url = "jobsheet://"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["jobsheet://**", "exp+jobsheet://**", "http://localhost:8081/**", "http://127.0.0.1:8081/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -263,7 +263,7 @@ otp_expiry = 3600
 [auth.sms]
 # Allow/disallow the phone provider. When false, users can't sign up or sign in with SMS.
 # To block new signups only, set enable_signup = false under [auth] instead.
-enabled = false
+enabled = true
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = false
 # Template for sending OTP to users
@@ -273,8 +273,11 @@ max_frequency = "5s"
 
 # Use pre-defined map of phone number to OTP for testing.
 # Keys are the phone number with country code and without the + prefix.
-# [auth.sms.test_otp]
-# 14152127777 = "123456"
+# Local/E2E only: fixed codes for reserved fictional numbers (US 555-01xx, UK Ofcom drama range).
+[auth.sms.test_otp]
+15555550100 = "123456"
+15555550101 = "123456"
+447700900123 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -397,8 +400,43 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Edge Functions verify callers in code (requireUser, webhook signatures, cron secret), which
+# works with both legacy JWT keys and the new publishable/secret API keys.
+[functions.ai_draft_quote]
+verify_jwt = false
+[functions.ai_items_from_photos]
+verify_jwt = false
+[functions.ai_map_csv]
+verify_jwt = false
+[functions.ai_draft_reminder]
+verify_jwt = false
+[functions.transcribe]
+verify_jwt = false
+[functions.render_pdf]
+verify_jwt = false
+[functions.send_document]
+verify_jwt = false
+[functions.public_document]
+verify_jwt = false
+[functions.stripe_connect]
+verify_jwt = false
+[functions.stripe_webhook]
+verify_jwt = false
+[functions.stripe_terminal]
+verify_jwt = false
+[functions.take_payment]
+verify_jwt = false
+[functions.run_chase_jobs]
+verify_jwt = false
+[functions.revenuecat_webhook]
+verify_jwt = false
+[functions.export_data]
+verify_jwt = false
+[functions.delete_account]
+verify_jwt = false
+
 [analytics]
-enabled = true
+enabled = false
 port = 54327
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"

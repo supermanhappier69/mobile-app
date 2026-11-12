@@ -1,0 +1,105 @@
+import type { DocumentKind, DocumentStatus, DueTerms } from './enums';
+
+export const STATUS_LABELS: Record<DocumentStatus, string> = {
+  draft: 'Draft',
+  sent: 'Sent',
+  viewed: 'Viewed',
+  accepted: 'Accepted',
+  declined: 'Declined',
+  scheduled: 'Scheduled',
+  done: 'Done',
+  unpaid: 'Unpaid',
+  partially_paid: 'Part paid',
+  paid: 'Paid',
+  overdue: 'Overdue',
+  void: 'Void',
+};
+
+export type StatusTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
+
+export const STATUS_TONES: Record<DocumentStatus, StatusTone> = {
+  draft: 'neutral',
+  sent: 'info',
+  viewed: 'info',
+  accepted: 'success',
+  declined: 'danger',
+  scheduled: 'info',
+  done: 'success',
+  unpaid: 'warning',
+  partially_paid: 'warning',
+  paid: 'success',
+  overdue: 'danger',
+  void: 'neutral',
+};
+
+/** Status changes the tradesperson may make from the app. Server-driven changes (sent/viewed/paid…) are excluded. */
+const CLIENT_TRANSITIONS: Record<DocumentKind, Partial<Record<DocumentStatus, readonly DocumentStatus[]>>> = {
+  quote: {
+    draft: ['void'],
+    sent: ['accepted', 'declined', 'void'],
+    viewed: ['accepted', 'declined', 'void'],
+    accepted: ['scheduled', 'done', 'void'],
+    declined: ['accepted', 'void'],
+    scheduled: ['done', 'accepted', 'void'],
+    done: ['scheduled'],
+  },
+  invoice: {
+    draft: ['void'],
+    unpaid: ['void'],
+    overdue: ['void'],
+    partially_paid: [],
+  },
+};
+
+export function canTransition(kind: DocumentKind, from: DocumentStatus, to: DocumentStatus): boolean {
+  return CLIENT_TRANSITIONS[kind][from]?.includes(to) ?? false;
+}
+
+export function isEditable(doc: { kind: DocumentKind; status: DocumentStatus; amount_paid_cents: number }): boolean {
+  if (doc.status === 'void' || doc.status === 'paid') return false;
+  if (doc.kind === 'invoice' && doc.amount_paid_cents > 0) return false;
+  return true;
+}
+
+export function isOpenInvoice(doc: { kind: DocumentKind; status: DocumentStatus }): boolean {
+  return doc.kind === 'invoice' && (doc.status === 'unpaid' || doc.status === 'partially_paid' || doc.status === 'overdue');
+}
+
+export function isAwaitingAnswer(doc: { kind: DocumentKind; status: DocumentStatus }): boolean {
+  return doc.kind === 'quote' && (doc.status === 'sent' || doc.status === 'viewed');
+}
+
+export function canConvertToInvoice(doc: { kind: DocumentKind; status: DocumentStatus }): boolean {
+  return doc.kind === 'quote' && ['accepted', 'scheduled', 'done', 'sent', 'viewed'].includes(doc.status);
+}
+
+/** Invoice status implied by payments and due date. Mirrors `derive_invoice_status` in SQL. */
+export function deriveInvoiceStatus(doc: {
+  status: DocumentStatus;
+  total_cents: number;
+  amount_paid_cents: number;
+  due_at: string | null;
+  sent_at: string | null;
+}, now: Date = new Date()): DocumentStatus {
+  if (doc.status === 'void') return 'void';
+  if (doc.total_cents > 0 && doc.amount_paid_cents >= doc.total_cents) return 'paid';
+  if (doc.status === 'draft' && !doc.sent_at) return 'draft';
+  const overdue = doc.due_at != null && new Date(doc.due_at).getTime() < now.getTime();
+  if (doc.amount_paid_cents > 0) return overdue ? 'overdue' : 'partially_paid';
+  return overdue ? 'overdue' : 'unpaid';
+}
+
+const DAY_MS = 86_400_000;
+
+export function dueDateFor(terms: DueTerms, from: Date): Date {
+  const days = terms === 'on_receipt' ? 0 : Number(terms.split('_')[1]);
+  return new Date(from.getTime() + days * DAY_MS);
+}
+
+export function daysBetween(a: Date, b: Date): number {
+  return Math.floor((b.getTime() - a.getTime()) / DAY_MS);
+}
+
+export function displayNumber(doc: { number: string | null }): string {
+  return doc.number ?? 'Draft';
+}
